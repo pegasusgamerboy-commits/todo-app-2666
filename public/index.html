@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Todo App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{
+  --bg:#f5f5f5;
+  --surface:#ffffff;
+  --text:#222222;
+  --muted:#555555;
+  --accent:#0066ff;
+  --border:#e0e0e0;
+  --radius:12px;
+  --shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#121212;
+    --surface:#1e1e1e;
+    --text:#e0e0e0;
+    --muted:#bbbbbb;
+    --accent:#3399ff;
+    --border:#333333;
+    --shadow:0 2px 6px rgba(0,0,0,0.5);
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;}
+.container{max-width:960px;margin:auto;padding:16px;}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;}
+h1{font-size:clamp(2rem,5vw,3.5rem);margin:0;}
+button{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:var(--radius);cursor:pointer;transition:background 150ms;}
+button:hover{background:#0055dd;}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+button:disabled{background:#aaa;cursor:not-allowed;}
+input, textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px;width:100%;font-size:1rem;}
+input:focus-visible, textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.todo-item{background:var(--surface);padding:12px;margin-bottom:8px;border-radius:var(--radius);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between;}
+.todo-item.completed .content{text-decoration:line-through;color:var(--muted);}
+.todo-item .content{flex:1;margin:0 8px;}
+.todo-item button{background:transparent;color:var(--muted);padding:4px;}
+.todo-item button:hover{color:var(--accent);}
+form{margin-bottom:24px;}
+.error{color:#d00;margin-top:8px;}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>My Todos</h1>
+    <div id="user-info" class="hidden">
+      <span id="user-email"></span>
+      <button id="logout-btn">Log out</button>
+    </div>
+  </header>
+
+  <section id="auth-section" class="hidden">
+    <form id="signup-form">
+      <h2>Sign Up</h2>
+      <input type="email" id="signup-email" placeholder="Email" required>
+      <input type="password" id="signup-password" placeholder="Password (8+ chars)" required>
+      <button type="submit">Sign Up</button>
+      <div id="signup-error" class="error"></div>
+    </form>
+
+    <form id="confirm-form" class="hidden">
+      <h2>Enter Confirmation Code</h2>
+      <input type="email" id="confirm-email" placeholder="Email" required>
+      <input type="text" id="confirm-code" placeholder="Code" required>
+      <button type="submit">Confirm</button>
+      <div id="confirm-error" class="error"></div>
+    </form>
+
+    <form id="login-form">
+      <h2>Log In</h2>
+      <input type="email" id="login-email" placeholder="Email" required>
+      <input type="password" id="login-password" placeholder="Password" required>
+      <button type="submit">Log In</button>
+      <div id="login-error" class="error"></div>
+    </form>
+  </section>
+
+  <section id="app-section" class="hidden">
+    <form id="new-todo-form">
+      <input type="text" id="new-todo-input" placeholder="What needs to be done?" required>
+      <button type="submit">Add</button>
+      <div id="new-todo-error" class="error"></div>
+    </form>
+
+    <div id="todos-list"></div>
+    <div id="todos-empty" class="hidden">No todos yet. Add one above!</div>
+  </section>
+</div>
+
+<script>
+(async function(){
+  const authSection = document.getElementById('auth-section');
+  const appSection = document.getElementById('app-section');
+  const userInfo = document.getElementById('user-info');
+  const userEmailSpan = document.getElementById('user-email');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  const signupForm = document.getElementById('signup-form');
+  const signupError = document.getElementById('signup-error');
+  const confirmForm = document.getElementById('confirm-form');
+  const confirmError = document.getElementById('confirm-error');
+  const loginForm = document.getElementById('login-form');
+  const loginError = document.getElementById('login-error');
+
+  const newTodoForm = document.getElementById('new-todo-form');
+  const newTodoInput = document.getElementById('new-todo-input');
+  const newTodoError = document.getElementById('new-todo-error');
+  const todosList = document.getElementById('todos-list');
+  const todosEmpty = document.getElementById('todos-empty');
+
+  async function fetchJSON(url, options){
+    const resp = await fetch(url, options);
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || data.message || 'Error');
+    return data;
+  }
+
+  async function loadMe(){
+    try{
+      const data = await fetchJSON('/auth/me');
+      userEmailSpan.textContent = data.email;
+      userInfo.classList.remove('hidden');
+      authSection.classList.add('hidden');
+      appSection.classList.remove('hidden');
+      loadTodos();
+    }catch(e){
+      authSection.classList.remove('hidden');
+      appSection.classList.add('hidden');
+      userInfo.classList.add('hidden');
+    }
+  }
+
+  logoutBtn.addEventListener('click', async function(){
+    await fetchJSON('/auth/logout', {method:'POST'});
+    loadMe();
+  });
+
+  signupForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    signupError.textContent = '';
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    try{
+      await fetchJSON('/auth/signup', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password})});
+      // Show confirm form
+      confirmForm.classList.remove('hidden');
+      document.getElementById('confirm-email').value = email;
+    }catch(err){
+      signupError.textContent = err.message;
+    }
+  });
+
+  confirmForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    confirmError.textContent = '';
+    const email = document.getElementById('confirm-email').value;
+    const code = document.getElementById('confirm-code').value;
+    try{
+      await fetchJSON('/auth/confirm', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,code})});
+      confirmForm.classList.add('hidden');
+    }catch(err){
+      confirmError.textContent = err.message;
+    }
+  });
+
+  loginForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    loginError.textContent = '';
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    try{
+      await fetchJSON('/auth/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password})});
+      loadMe();
+    }catch(err){
+      if (err.message === 'User is not confirmed.') {
+        // Show confirm form
+        confirmForm.classList.remove('hidden');
+        document.getElementById('confirm-email').value = email;
+      } else {
+        loginError.textContent = err.message;
+      }
+    }
+  });
+
+  async function loadTodos(){
+    try{
+      const items = await fetchJSON('/todos');
+      todosList.innerHTML = '';
+      if (items.length === 0){
+        todosEmpty.classList.remove('hidden');
+      } else {
+        todosEmpty.classList.add('hidden');
+        items.forEach(renderTodo);
+      }
+    }catch(err){
+      console.error('Failed to load todos', err);
+    }
+  }
+
+  function renderTodo(item){
+    const div = document.createElement('div');
+    div.className = 'todo-item' + (item.completed ? ' completed' : '');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = item.completed;
+    checkbox.addEventListener('change', async function(){
+      try{
+        await fetchJSON('/todos/' + encodeURIComponent(item.id), {
+          method:'PUT',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({completed:checkbox.checked})
+        });
+        div.classList.toggle('completed', checkbox.checked);
+      }catch(e){
+        alert('Update failed: ' + e.message);
+        checkbox.checked = !checkbox.checked;
+      }
+    });
+    const span = document.createElement('span');
+    span.className = 'content';
+    span.textContent = item.content;
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '✕';
+    delBtn.title = 'Delete';
+    delBtn.addEventListener('click', async function(){
+      if (!confirm('Delete this todo?')) return;
+      try{
+        await fetchJSON('/todos/' + encodeURIComponent(item.id), {method:'DELETE'});
+        div.remove();
+        if (todosList.children.length === 0) todosEmpty.classList.remove('hidden');
+      }catch(e){
+        alert('Delete failed: ' + e.message);
+      }
+    });
+    div.appendChild(checkbox);
+    div.appendChild(span);
+    div.appendChild(delBtn);
+    todosList.appendChild(div);
+  }
+
+  newTodoForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    newTodoError.textContent = '';
+    const content = newTodoInput.value.trim();
+    if (!content){
+      newTodoError.textContent = 'Please enter a todo.';
+      return;
+    }
+    try{
+      const created = await fetchJSON('/todos', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({content})
+      });
+      renderTodo(created);
+      newTodoInput.value = '';
+      todosEmpty.classList.add('hidden');
+    }catch(err){
+      newTodoError.textContent = err.message;
+    }
+  });
+
+  // Initial load
+  loadMe();
+})();
+</script>
+</body>
+</html>
