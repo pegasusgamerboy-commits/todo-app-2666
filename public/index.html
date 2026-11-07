@@ -2,97 +2,464 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Todo App</title>
+<title>Your Daily Focus</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-:root{
-  --bg:#f5f5f5;
-  --surface:#ffffff;
-  --text:#222222;
-  --muted:#555555;
-  --accent:#0066ff;
-  --border:#e0e0e0;
-  --radius:12px;
-  --shadow:0 2px 6px rgba(0,0,0,0.1);
+:root {
+  --bg: #f0f4f8; /* Lighter, subtle background */
+  --surface: #ffffff;
+  --text: #2c3e50; /* Darker, more professional text */
+  --muted: #7f8c8d; /* Softer muted text */
+  --accent: #3498db; /* A vibrant blue */
+  --accent-dark: #2980b9; /* Darker blue for hover */
+  --accent-light: #eaf6ff; /* Very light accent for backgrounds/borders */
+  --border: #e0e6ed; /* Softer border */
+  --radius: 12px; /* Slightly larger radius */
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04); /* Layered shadow */
+  --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.12), 0 3px 10px rgba(0, 0, 0, 0.06);
+  --error-color: #e74c3c; /* Red for errors */
 }
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg:#121212;
-    --surface:#1e1e1e;
-    --text:#e0e0e0;
-    --muted:#bbbbbb;
-    --accent:#3399ff;
-    --border:#333333;
-    --shadow:0 2px 6px rgba(0,0,0,0.5);
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1e272e; /* Darker background */
+    --surface: #2f3e4c; /* Darker surface */
+    --text: #ecf0f1; /* Lighter text */
+    --muted: #bdc3c7; /* Lighter muted */
+    --accent: #5dade2; /* Lighter blue for dark mode */
+    --accent-dark: #3498db;
+    --accent-light: #3a5060;
+    --border: #4a6572;
+    --shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15);
+    --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.4), 0 3px 10px rgba(0, 0, 0, 0.2);
+    --error-color: #e74c3c;
   }
 }
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;}
-.container{max-width:960px;margin:auto;padding:16px;}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;}
-h1{font-size:clamp(2rem,5vw,3.5rem);margin:0;}
-button{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:var(--radius);cursor:pointer;transition:background 150ms;}
-button:hover{background:#0055dd;}
-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-button:disabled{background:#aaa;cursor:not-allowed;}
-input, textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px;width:100%;font-size:1rem;}
-input:focus-visible, textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-.todo-item{background:var(--surface);padding:12px;margin-bottom:8px;border-radius:var(--radius);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between;}
-.todo-item.completed .content{text-decoration:line-through;color:var(--muted);}
-.todo-item .content{flex:1;margin:0 8px;}
-.todo-item button{background:transparent;color:var(--muted);padding:4px;}
-.todo-item button:hover{color:var(--accent);}
-form{margin-bottom:24px;}
-.error{color:#d00;margin-top:8px;}
-.hidden{display:none;}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif; /* Using Inter as a placeholder for a clean sans-serif */
+  background: linear-gradient(to bottom right, var(--bg), var(--bg) 80%, var(--accent-light) 150%); /* Subtle gradient */
+  color: var(--text);
+  line-height: 1.6;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 64px 16px; /* More generous padding */
+}
+
+.container {
+  max-width: 800px; /* Slightly wider */
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 64px; /* More whitespace */
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding-bottom: 32px; /* Add padding below header */
+}
+
+h1 {
+  font-size: clamp(2.8rem, 6vw, 4rem); /* Slightly larger H1 */
+  font-weight: 800;
+  letter-spacing: -0.04em; /* Tighter letter spacing */
+  line-height: 1.05;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.subhead {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 600px;
+}
+
+h2 {
+  font-size: 1.6rem; /* Slightly smaller H2 for subhead */
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 24px;
+  line-height: 1.3;
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--radius); /* Consistent radius */
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background 150ms ease-out, transform 100ms ease-out, box-shadow 150ms ease-out;
+  box-shadow: var(--shadow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+button:hover {
+  background: var(--accent-dark);
+  transform: translateY(-2px); /* More pronounced lift */
+  box-shadow: var(--shadow-hover);
+}
+
+button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px; /* More offset */
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow);
+}
+
+button:disabled {
+  background: var(--muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  border: 1px solid var(--border);
+  border-radius: var(--radius); /* Consistent radius */
+  padding: 12px 16px;
+  width: 100%;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder {
+  color: var(--muted);
+}
+
+input[type="text"]:focus-visible,
+input[type="email"]:focus-visible,
+input[type="password"]:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light), 0 0 0 5px var(--accent); /* More prominent focus ring */
+}
+
+form {
+  background: var(--surface);
+  padding: 40px; /* More padding */
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border); /* Subtle border for forms */
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* More gap */
+  margin-bottom: 24px;
+}
+
+form button {
+  width: auto;
+  align-self: flex-end;
+}
+
+.auth-forms {
+  display: flex;
+  flex-direction: column;
+  gap: 48px; /* More gap */
+}
+
+.todo-item {
+  background: var(--surface);
+  padding: 18px 24px; /* More padding */
+  margin-bottom: 16px; /* More margin */
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border); /* Subtle border for items */
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: box-shadow 150ms ease-out, transform 100ms ease-out, border-color 150ms ease-out;
+}
+
+.todo-item:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-3px); /* More pronounced lift */
+  border-color: var(--accent-light); /* Subtle accent border on hover */
+}
+
+.todo-item.completed {
+  opacity: 0.8; /* Slightly less opacity */
+}
+
+.todo-item.completed .content {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.todo-item .content {
+  flex: 1;
+  font-size: 1.15rem; /* Slightly larger font */
+  word-break: break-word;
+}
+
+.todo-item input[type="checkbox"] {
+  appearance: none;
+  width: 26px; /* Slightly larger checkbox */
+  height: 26px;
+  border: 2px solid var(--border);
+  border-radius: 6px; /* Softer checkbox corners */
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+}
+
+.todo-item input[type="checkbox"]::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  transform: scale(0);
+  transition: transform 150ms ease-out;
+  box-shadow: inset 1em 1em var(--surface); /* Use surface for checkmark color */
+  background-color: var(--accent);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 60%);
+}
+
+.todo-item input[type="checkbox"]:checked {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.todo-item input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+.todo-item input[type="checkbox"]:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.todo-item .delete-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 10px; /* Larger hit area */
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color 150ms ease-out, background-color 150ms ease-out;
+  box-shadow: none; /* Override button shadow */
+  transform: none; /* Override button transform */
+}
+
+.todo-item .delete-btn:hover {
+  color: var(--error-color); /* Red for delete */
+  background-color: rgba(231, 76, 60, 0.1); /* Using RGB for transparency */
+}
+
+.todo-item .delete-btn svg {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+}
+
+.error {
+  color: var(--error-color);
+  margin-top: 12px;
+  font-size: 0.95rem;
+  text-align: right;
+  font-weight: 500;
+}
+
+.hidden {
+  display: none !important;
+}
+
+#user-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+#user-info button {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  box-shadow: none;
+  background: var(--muted);
+}
+
+#user-info button:hover {
+  background: #6c757d; /* Darker muted */
+}
+
+#new-todo-form {
+  display: flex;
+  gap: 16px;
+  padding: 32px; /* Slightly less padding than auth forms */
+  margin-bottom: 40px;
+}
+
+#new-todo-form input {
+  flex: 1;
+}
+
+#todos-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 64px 0; /* More padding */
+  font-size: 1.2rem;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+/* Loading spinner CSS */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.spinner {
+  border: 4px solid var(--border);
+  border-top: 4px solid var(--accent);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) { /* Adjust breakpoint */
+  body {
+    padding: 32px 16px;
+  }
+  .container {
+    gap: 48px;
+  }
+  h1 {
+    font-size: clamp(2.2rem, 8vw, 3.5rem);
+  }
+  .subhead {
+    font-size: 1.1rem;
+  }
+  form {
+    padding: 32px;
+  }
+  #new-todo-form {
+    flex-direction: column;
+    gap: 16px;
+  }
+  form button {
+    width: 100%;
+    align-self: stretch;
+  }
+  .todo-item {
+    padding: 16px 20px;
+    gap: 16px;
+  }
+  .todo-item .content {
+    font-size: 1.05rem;
+  }
+  #todos-empty {
+    padding: 48px 0;
+  }
+}
 </style>
 </head>
 <body>
 <div class="container">
   <header>
-    <h1>My Todos</h1>
+    <h1>Your Daily Focus</h1>
+    <p class="subhead">Stay organized and productive with your personal task manager.</p>
     <div id="user-info" class="hidden">
       <span id="user-email"></span>
       <button id="logout-btn">Log out</button>
     </div>
   </header>
 
-  <section id="auth-section" class="hidden">
-    <form id="signup-form">
-      <h2>Sign Up</h2>
-      <input type="email" id="signup-email" placeholder="Email" required>
-      <input type="password" id="signup-password" placeholder="Password (8+ chars)" required>
-      <button type="submit">Sign Up</button>
-      <div id="signup-error" class="error"></div>
-    </form>
+  <main>
+    <section id="auth-section" class="auth-forms hidden">
+      <form id="signup-form">
+        <h2>Create Your Account</h2>
+        <input type="email" id="signup-email" placeholder="Email" required autocomplete="email">
+        <input type="password" id="signup-password" placeholder="Password (8+ chars, upper, lower, number)" required autocomplete="new-password" minlength="8">
+        <button type="submit">Sign Up</button>
+        <div id="signup-error" class="error"></div>
+      </form>
 
-    <form id="confirm-form" class="hidden">
-      <h2>Enter Confirmation Code</h2>
-      <input type="email" id="confirm-email" placeholder="Email" required>
-      <input type="text" id="confirm-code" placeholder="Code" required>
-      <button type="submit">Confirm</button>
-      <div id="confirm-error" class="error"></div>
-    </form>
+      <form id="confirm-form" class="hidden">
+        <h2>Confirm Your Account</h2>
+        <p class="subhead" style="text-align: center; margin-bottom: 0; color: var(--text);">A confirmation code has been sent to your email.</p>
+        <input type="email" id="confirm-email" placeholder="Email" required autocomplete="email">
+        <input type="text" id="confirm-code" placeholder="Confirmation Code" required>
+        <button type="submit">Confirm</button>
+        <div id="confirm-error" class="error"></div>
+      </form>
 
-    <form id="login-form">
-      <h2>Log In</h2>
-      <input type="email" id="login-email" placeholder="Email" required>
-      <input type="password" id="login-password" placeholder="Password" required>
-      <button type="submit">Log In</button>
-      <div id="login-error" class="error"></div>
-    </form>
-  </section>
+      <form id="login-form">
+        <h2>Log In to Your Account</h2>
+        <input type="email" id="login-email" placeholder="Email" required autocomplete="email">
+        <input type="password" id="login-password" placeholder="Password" required autocomplete="current-password">
+        <button type="submit">Log In</button>
+        <div id="login-error" class="error"></div>
+      </form>
+    </section>
 
-  <section id="app-section" class="hidden">
-    <form id="new-todo-form">
-      <input type="text" id="new-todo-input" placeholder="What needs to be done?" required>
-      <button type="submit">Add</button>
-      <div id="new-todo-error" class="error"></div>
-    </form>
+    <section id="app-section" class="hidden">
+      <form id="new-todo-form">
+        <input type="text" id="new-todo-input" placeholder="What needs to be done?" required>
+        <button type="submit">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+            <path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path>
+          </svg>
+          Add Task
+        </button>
+        <div id="new-todo-error" class="error"></div>
+      </form>
 
-    <div id="todos-list"></div>
-    <div id="todos-empty" class="hidden">No todos yet. Add one above!</div>
-  </section>
+      <div id="todos-list"></div>
+      <div id="todos-empty" class="hidden">
+        <p>No tasks yet! Add your first todo above.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="loading-overlay" class="loading-overlay hidden">
+  <div class="spinner"></div>
 </div>
 
 <script>
@@ -104,10 +471,18 @@ form{margin-bottom:24px;}
   const logoutBtn = document.getElementById('logout-btn');
 
   const signupForm = document.getElementById('signup-form');
+  const signupEmailInput = document.getElementById('signup-email');
+  const signupPasswordInput = document.getElementById('signup-password');
   const signupError = document.getElementById('signup-error');
+
   const confirmForm = document.getElementById('confirm-form');
+  const confirmEmailInput = document.getElementById('confirm-email');
+  const confirmCodeInput = document.getElementById('confirm-code');
   const confirmError = document.getElementById('confirm-error');
+
   const loginForm = document.getElementById('login-form');
+  const loginEmailInput = document.getElementById('login-email');
+  const loginPasswordInput = document.getElementById('login-password');
   const loginError = document.getElementById('login-error');
 
   const newTodoForm = document.getElementById('new-todo-form');
@@ -115,15 +490,42 @@ form{margin-bottom:24px;}
   const newTodoError = document.getElementById('new-todo-error');
   const todosList = document.getElementById('todos-list');
   const todosEmpty = document.getElementById('todos-empty');
+  const loadingOverlay = document.getElementById('loading-overlay');
+
+  function showLoading() {
+    loadingOverlay.classList.remove('hidden');
+  }
+
+  function hideLoading() {
+    loadingOverlay.classList.add('hidden');
+  }
+
+  function clearErrors() {
+    signupError.textContent = '';
+    confirmError.textContent = '';
+    loginError.textContent = '';
+    newTodoError.textContent = '';
+  }
 
   async function fetchJSON(url, options){
-    const resp = await fetch(url, options);
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error || data.message || 'Error');
-    return data;
+    showLoading();
+    try {
+      const resp = await fetch(url, options);
+      const data = await resp.json();
+      if (!resp.ok) {
+        const errorMessage = data.error || data.message || 'An unknown error occurred.';
+        const error = new Error(errorMessage);
+        error.code = data.code; // Attach custom code if available
+        throw error;
+      }
+      return data;
+    } finally {
+      hideLoading();
+    }
   }
 
   async function loadMe(){
+    clearErrors();
     try{
       const data = await fetchJSON('/auth/me');
       userEmailSpan.textContent = data.email;
@@ -135,24 +537,35 @@ form{margin-bottom:24px;}
       authSection.classList.remove('hidden');
       appSection.classList.add('hidden');
       userInfo.classList.add('hidden');
+      // Clear forms on logout/unauthenticated
+      signupForm.reset();
+      confirmForm.reset();
+      loginForm.reset();
+      confirmForm.classList.add('hidden'); // Hide confirm form if not needed
     }
   }
 
   logoutBtn.addEventListener('click', async function(){
-    await fetchJSON('/auth/logout', {method:'POST'});
-    loadMe();
+    try {
+      await fetchJSON('/auth/logout', {method:'POST'});
+    } catch (e) {
+      console.error('Logout failed:', e);
+    } finally {
+      loadMe(); // Always reload state after logout attempt
+    }
   });
 
   signupForm.addEventListener('submit', async function(e){
     e.preventDefault();
-    signupError.textContent = '';
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
+    clearErrors();
+    const email = signupEmailInput.value;
+    const password = signupPasswordInput.value;
     try{
       await fetchJSON('/auth/signup', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password})});
-      // Show confirm form
       confirmForm.classList.remove('hidden');
-      document.getElementById('confirm-email').value = email;
+      confirmEmailInput.value = email;
+      signupForm.reset(); // Clear signup form after successful submission
+      alert('Signup successful! Please check your email for a confirmation code.');
     }catch(err){
       signupError.textContent = err.message;
     }
@@ -160,12 +573,14 @@ form{margin-bottom:24px;}
 
   confirmForm.addEventListener('submit', async function(e){
     e.preventDefault();
-    confirmError.textContent = '';
-    const email = document.getElementById('confirm-email').value;
-    const code = document.getElementById('confirm-code').value;
+    clearErrors();
+    const email = confirmEmailInput.value;
+    const code = confirmCodeInput.value;
     try{
       await fetchJSON('/auth/confirm', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,code})});
       confirmForm.classList.add('hidden');
+      confirmForm.reset(); // Clear confirm form after successful confirmation
+      alert('Account confirmed! You can now log in.');
     }catch(err){
       confirmError.textContent = err.message;
     }
@@ -173,17 +588,18 @@ form{margin-bottom:24px;}
 
   loginForm.addEventListener('submit', async function(e){
     e.preventDefault();
-    loginError.textContent = '';
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
+    clearErrors();
+    const email = loginEmailInput.value;
+    const password = loginPasswordInput.value;
     try{
       await fetchJSON('/auth/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password})});
+      loginForm.reset(); // Clear login form after successful login
       loadMe();
     }catch(err){
-      if (err.message === 'User is not confirmed.') {
-        // Show confirm form
+      if (err.code === 'NOT_CONFIRMED') {
         confirmForm.classList.remove('hidden');
-        document.getElementById('confirm-email').value = email;
+        confirmEmailInput.value = email;
+        loginError.textContent = 'Account not confirmed. Please enter the code sent to your email.';
       } else {
         loginError.textContent = err.message;
       }
@@ -202,17 +618,21 @@ form{margin-bottom:24px;}
       }
     }catch(err){
       console.error('Failed to load todos', err);
+      // Optionally display a user-friendly error message
     }
   }
 
   function renderTodo(item){
     const div = document.createElement('div');
     div.className = 'todo-item' + (item.completed ? ' completed' : '');
+    div.setAttribute('data-id', item.id); // For easier identification
+
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = item.completed;
     checkbox.addEventListener('change', async function(){
       try{
+        showLoading();
         await fetchJSON('/todos/' + encodeURIComponent(item.id), {
           method:'PUT',
           headers:{'Content-Type':'application/json'},
@@ -221,25 +641,38 @@ form{margin-bottom:24px;}
         div.classList.toggle('completed', checkbox.checked);
       }catch(e){
         alert('Update failed: ' + e.message);
-        checkbox.checked = !checkbox.checked;
+        checkbox.checked = !checkbox.checked; // Revert checkbox state on error
+      } finally {
+        hideLoading();
       }
     });
+
     const span = document.createElement('span');
     span.className = 'content';
     span.textContent = item.content;
+
     const delBtn = document.createElement('button');
-    delBtn.textContent = '✕';
-    delBtn.title = 'Delete';
+    delBtn.className = 'delete-btn';
+    delBtn.title = 'Delete todo';
+    delBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11H11V17H9V11ZM13 11H15V17H13V11ZM9 4V6H15V4H9Z"></path>
+      </svg>
+    `;
     delBtn.addEventListener('click', async function(){
-      if (!confirm('Delete this todo?')) return;
+      if (!confirm('Are you sure you want to delete this todo?')) return;
       try{
+        showLoading();
         await fetchJSON('/todos/' + encodeURIComponent(item.id), {method:'DELETE'});
         div.remove();
         if (todosList.children.length === 0) todosEmpty.classList.remove('hidden');
       }catch(e){
         alert('Delete failed: ' + e.message);
+      } finally {
+        hideLoading();
       }
     });
+
     div.appendChild(checkbox);
     div.appendChild(span);
     div.appendChild(delBtn);
@@ -248,10 +681,10 @@ form{margin-bottom:24px;}
 
   newTodoForm.addEventListener('submit', async function(e){
     e.preventDefault();
-    newTodoError.textContent = '';
+    clearErrors();
     const content = newTodoInput.value.trim();
     if (!content){
-      newTodoError.textContent = 'Please enter a todo.';
+      newTodoError.textContent = 'Please enter a task description.';
       return;
     }
     try{
